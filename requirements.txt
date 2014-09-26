@@ -1,2 +1,2 @@
-python-kambanize
+python-kanbanize
 python-rest-client==0.3

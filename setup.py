@@ -35,9 +35,7 @@ setup(
     description=description,
     long_description=long_description,
     classifiers=classifiers,
-    dependency_links = [
-        'https://github.com/mportela/python-kanbanize/tarball/master'
-    ],
+    dependency_links = ['https://github.com/mportela/python-kanbanize/tarball/master#egg=python-kanbanize-0.2.1'],
     install_requires = reqs,
     packages=find_packages(),
     license = 'GNU GPL V2',
