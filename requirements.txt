@@ -1,0 +1,2 @@
+python-kambanize
+python-rest-client==0.3
