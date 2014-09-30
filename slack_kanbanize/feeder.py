@@ -5,7 +5,8 @@ class Feeder(object):
 
     def __init__(self, kambanize_api_key, kambanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
-                 kambanize_timedelta_collect_minutes=2):
+                 kambanize_timedelta_collect_minutes=2,
+                 local_timediff=-3):
         """
             parameters:
             @kambanize_api_key - kambanize appi key to be used
@@ -15,11 +16,13 @@ class Feeder(object):
             @slack_token - slack token autorization to be used
             @slack_channel - slack channel to be used
             @slack_user - slack user to be used
+            @local_timediff - diference in local time hours from utc
 
             * - in slack free version there is a limit of "Limit per hour (per
                 API KEY)" of 30 calls
                 see https://kanbanize.com/ctrl_integration/ for details
         """
+        self.local_timediff = local_timediff
         self.kambanize_opts = {
             'api_key': kambanize_api_key,
             'board_id': kambanize_board_id,

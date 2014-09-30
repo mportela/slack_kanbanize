@@ -22,6 +22,7 @@ class TestSequenceFunctions(unittest.TestCase):
         }
         self.assertEqual(exp_kambanize_opts, obj.kambanize_opts)
         self.assertEqual(exp_slack_opts, obj.slack_opts)
+        self.assertEqual(-3, obj.local_timediff)
 
 if __name__ == '__main__':
     unittest.main()
