@@ -41,6 +41,8 @@ class Feeder(object):
             'channel': slack_channel,
             'user': slack_user
         }
+        self.slack_client = SlackClient(slack_token)
+        self.kanbanize_client = Kanbanize(self.kanbanize_opts['api_key'])
 
     def _get_kanbanize_board_activities(self, from_date, to_date):
         """
@@ -50,7 +52,6 @@ class Feeder(object):
             @to_date - datetime object to be used in get_board_activities
             Return a list with board activities
         """
-        kanbanize = Kanbanize(self.kanbanize_opts['api_key'])
 
         from_date_aware = from_date.replace(tzinfo=Feeder.LOCAL_ZONE)
         from_dt_utc_string = from_date_aware.astimezone(
@@ -61,6 +62,22 @@ class Feeder(object):
                                                     Feeder.UTC_ZONE).strftime(
                                                            "%Y-%m-%d %H:%M:%S")
 
-        return kanbanize.get_board_activities(self.kanbanize_opts['board_id'],
-                                              from_dt_utc_string,
-                                              to_dt_utc_string)
+        return self.kanbanize_client.get_board_activities(
+                                               self.kanbanize_opts['board_id'],
+                                               from_dt_utc_string,
+                                               to_dt_utc_string)
+
+    def _post_slack_message(self, text, **params):
+        """
+            Used to post a message to the slack board configured in
+            self.slack_opts, using SlackClient.chat_post_message
+            Arguments:
+            @text - string with string message
+            @**params - optional extra kwargs to be passed to the slack api
+            Return True if all ok with api communication
+        """
+        params.update({'username': self.slack_opts['user']})
+        ret = self.slack_client.chat_post_message(self.slack_opts['channel'],
+                                                  text,
+                                                  **params)
+        return ret[u'ok']

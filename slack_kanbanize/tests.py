@@ -7,6 +7,7 @@ import datetime
 from dateutil import tz
 import feeder
 from python_kanbanize.wrapper import Kanbanize
+from pyslack import SlackClient
 
 
 class TestFeederClass(unittest.TestCase):
@@ -52,6 +53,29 @@ class TestFeederClass(unittest.TestCase):
                                         exp_from_date,
                                         exp_to_date)
         self.assertEqual(mk_ret, ret)
+
+    @mock.patch.object(SlackClient, 'chat_post_message')
+    def test_simple_post_slack_message(self, mk_post_message):
+        mk_post_message.return_value = {u'ok': True}
+        ret = self.obj._post_slack_message("foo message blah")
+        mk_post_message.assert_called_once_with(
+                                      self.obj.slack_opts['channel'],
+                                      "foo message blah",
+                                      username=self.obj.slack_opts['user'])
+        self.assertEqual(True, ret, "must return True when ok")
+
+    @mock.patch.object(SlackClient, 'chat_post_message')
+    def test_extra_params_post_slack_message(self, mk_post_message):
+        mk_post_message.return_value = {u'ok': True}
+        ret = self.obj._post_slack_message("foo message blah", parse="full",
+                                           unfurl_links=1)
+        mk_post_message.assert_called_once_with(
+                                      self.obj.slack_opts['channel'],
+                                      "foo message blah",
+                                      username=self.obj.slack_opts['user'],
+                                      parse="full",
+                                      unfurl_links=1)
+        self.assertEqual(True, ret, "must return True when ok")
 
 if __name__ == '__main__':
     unittest.main()
