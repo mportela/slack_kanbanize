@@ -30,7 +30,6 @@ class TestFeederClass(unittest.TestCase):
         }
         self.assertEqual(exp_kanbanize_opts, self.obj.kanbanize_opts)
         self.assertEqual(exp_slack_opts, self.obj.slack_opts)
-        self.assertEqual(-3, self.obj.local_timediff)
 
     @mock.patch.object(Kanbanize, 'get_board_activities')
     def test_get_kanbanize_board_activities(self, mk_get_activities):

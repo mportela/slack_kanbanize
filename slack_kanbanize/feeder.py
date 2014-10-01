@@ -14,8 +14,7 @@ class Feeder(object):
 
     def __init__(self, kanbanize_api_key, kanbanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
-                 kanbanize_timedelta_collect_minutes=2,
-                 local_timediff=-3):
+                 kanbanize_timedelta_collect_minutes=2):
         """
             Arguments:
             @kanbanize_api_key - kanbanize appi key to be used
@@ -32,7 +31,6 @@ class Feeder(object):
                 API KEY)" of 30 calls
                 see https://kanbanize.com/ctrl_integration/ for details
         """
-        self.local_timediff = local_timediff
         self.kanbanize_opts = {
             'api_key': kanbanize_api_key,
             'board_id': kanbanize_board_id,
