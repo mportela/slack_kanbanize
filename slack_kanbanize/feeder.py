@@ -1,10 +1,16 @@
 # coding=utf-8
 
+import datetime
+
+from dateutil import tz
 from python_kanbanize.wrapper import Kanbanize
 from pyslack import SlackClient
 
 
 class Feeder(object):
+
+    UTC_ZONE = tz.tzutc()
+    LOCAL_ZONE = tz.tzlocal()
 
     def __init__(self, kambanize_api_key, kambanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
@@ -46,4 +52,17 @@ class Feeder(object):
             @to_date - datetime object to be used in get_board_activities
             Return a list with board activities
         """
-        pass
+        kambanize = Kanbanize(self.kambanize_opts['api_key'])
+
+        from_date_aware = from_date.replace(tzinfo=Feeder.LOCAL_ZONE)
+        from_dt_utc_string = from_date_aware.astimezone(
+                                                    Feeder.UTC_ZONE).strftime(
+                                                           "%Y-%m-%d %H:%M:%S")
+        to_date_aware = to_date.replace(tzinfo=Feeder.LOCAL_ZONE)
+        to_dt_utc_string = to_date_aware.astimezone(
+                                                    Feeder.UTC_ZONE).strftime(
+                                                           "%Y-%m-%d %H:%M:%S")
+
+        return kambanize.get_board_activities(self.kambanize_opts['board_id'],
+                                              from_dt_utc_string,
+                                              to_dt_utc_string)
