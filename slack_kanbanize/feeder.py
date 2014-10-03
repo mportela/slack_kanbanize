@@ -82,6 +82,24 @@ class Feeder(object):
                                                   **params)
         return ret[u'ok']
 
+    def _format_output_message(self, activitie):
+        """
+            Process the activitie object and Return the formatted_message for
+            this activity
+        """
+        events_emoji_traslator = {
+            u'Task archived': ':+1:',
+            u'Assignee changed': ':octocat:',
+            u'Comment added': ':speech_balloon:',
+            u'Task moved': ':rocket:',
+            u'Attachments updated': ':paperclip:',
+            u'Task updated': ':pencil:',
+            u'Task created': ':ticket:',
+            u'External link changed': ':link:',
+            u'Tags changed': ':triangular_flag_on_post:'
+            }
+        return 'todo implement it'
+
     def _parse_kambanize_activities(self, raw_data):
         """
             Used to process activities, grouping by same taskid / date
