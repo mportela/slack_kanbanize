@@ -24,8 +24,6 @@ class Feeder(object):
             @slack_token - slack token autorization to be used
             @slack_channel - slack channel to be used
             @slack_user - slack user to be used
-            @local_timediff - diference in local time hours from utc to present
-                              datetime data returned
 
             obs: in slack free version there is a limit of "Limit per hour (per
                 API KEY)" of 30 calls
