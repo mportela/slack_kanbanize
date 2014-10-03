@@ -149,7 +149,7 @@ class TestFeederClass(unittest.TestCase):
         ]
         self.assertEqual(exp_calls, mk_formatter.call_args_list)
 
-        #expected ret - 3 tasks
+        # expected ret - 3 tasks
         exp_ret = [
             {u'taskid': u'133',
              u'activities': {
@@ -202,7 +202,7 @@ class TestFeederClass(unittest.TestCase):
             simulatte the following data to be grouped and returned:
                 - 2 activities in same task / date
         """
-        #simulated formatter function to be used
+        # simulated formatter function to be used
         def new_formatter(data):
             return u'foo formated data'
 
@@ -239,6 +239,32 @@ class TestFeederClass(unittest.TestCase):
             }
         ]
         self.assertEqual(exp_ret, ret)
+
+    def test_default_message_formatter_function_with_know_event(self):
+        activity = {u'author': u'marcel.portela',
+                    u'event': u'Assignee changed',
+                    u'text': u'New assignee: marcel.portela'}
+
+        formatted_str = feeder.Feeder._default_message_formatter_function(
+                                                                    activity)
+
+        exp_str = u":octocat: User: *marcel.portela* Event: Assignee"\
+                  u" changed: to *marcel.portela*"
+
+        self.assertEqual(exp_str, formatted_str)
+
+    def test_default_message_formatter_function_with_know_event(self):
+        activity = {u'author': u'marcel.portela',
+                    u'event': u'Foo other event',
+                    u'text': u'foo msg text'}
+
+        formatted_str = feeder.Feeder._default_message_formatter_function(
+                                                                    activity)
+
+        exp_str = u"User: *marcel.portela* Event: _Foo other event_:"\
+                  u" foo msg text"
+
+        self.assertEqual(exp_str, formatted_str)
 
 if __name__ == '__main__':
     unittest.main()

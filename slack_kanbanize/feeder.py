@@ -89,6 +89,7 @@ class Feeder(object):
             @activity_data - dict object with this format:
                             {u'event': u'Task updated',
                              u'text': u'New tag:', u'author': u'mportela'}
+            Return the formatted_string for the activity, based in the 'event'
         """
         events_emoji_traslator = {
             u'Task archived': ':+1:',
@@ -105,8 +106,7 @@ class Feeder(object):
         pass
 
     def _parse_kambanize_activities(self, raw_data,
-                                    msg_formatter_function=\
-                                    _default_message_formatter_function):
+                msg_formatter_function=_default_message_formatter_function):
         """
             Used to process activities, grouping by same taskid / date
             Arguments:
@@ -114,7 +114,7 @@ class Feeder(object):
                         kambanize._get_kanbanize_board_activities
             @msg_formatter_function - function to be used to format each msg
             Return list with objects grouped by taskid / date
-            example of return: 
+            example of return:
             [{u'taskid': u'125',
               u'activities': {u'2014-09-30 19:01:31': [
                             {u'event': u'Task updated',
