@@ -92,22 +92,22 @@ class Feeder(object):
             Return the formatted_string for the activity, based in the 'event'
         """
         events_emoji_traslator = {
-            u'Task archived': ':+1:',
-            u'Assignee changed': ':octocat:',
-            u'Comment added': ':speech_balloon:',
-            u'Task moved': ':rocket:',
-            u'Attachments updated': ':paperclip:',
-            u'Task updated': ':pencil:',
-            u'Task created': ':ticket:',
-            u'External link changed': ':link:',
-            u'Tags changed': ':triangular_flag_on_post:'
+            u'Task archived': u':+1:',
+            u'Assignee changed': u':octocat:',
+            u'Comment added': u':speech_balloon:',
+            u'Task moved': u':rocket:',
+            u'Attachments updated': u':paperclip:',
+            u'Task updated': u':pencil:',
+            u'Task created': u':ticket:',
+            u'External link changed': u':link:',
+            u'Tags changed': u':triangular_flag_on_post:'
             }
-        emoji = ''
+        emoji = u''
         event = activity_data.get(u'event', u'')
-        user = '*%s*' % activity_data.get(u'author', u'')
+        user = u'*%s*' % activity_data.get(u'author', u'')
         text = activity_data.get(u'text', u'')
         try:
-            emoji = '%s ' % events_emoji_traslator[event]
+            emoji = u'%s ' % events_emoji_traslator[event]
         except KeyError, e:
             # case of event not know, just return the name with italic format
             event = u'_%s_' % event
@@ -118,7 +118,7 @@ class Feeder(object):
         return msg
 
     def _parse_kambanize_activities(self, raw_data,
-                msg_formatter_function=_default_message_formatter_function):
+                msg_formatter_function=None):
         """
             Used to process activities, grouping by same taskid / date
             Arguments:
@@ -134,4 +134,30 @@ class Feeder(object):
                              u'formatted_message': 'foo fmted'}]}
              },...]
         """
-        pass
+        if not msg_formatter_function:
+            msg_formatter_function =\
+                Feeder._default_message_formatter_function
+        raw_activities = raw_data.get(u'activities', [])
+        ret_list = []
+        for raw_activity in raw_activities:
+            activity = {
+                u'author': raw_activity[u'author'],
+                u'event': raw_activity[u'event'],
+                u'text': raw_activity[u'text'],
+                u'formatted_message': u''}
+            activity[u'formatted_message'] = msg_formatter_function(activity)
+            for item in ret_list:
+                # if in result yet, update the date / activities
+                if item[u'taskid'] == raw_activity[u'taskid']:
+                    item[u'activities'].setdefault(raw_activity[u'date'], [])
+                    item[u'activities'][raw_activity[u'date']].append(activity)
+                    break
+            else:
+                # if not in result yet, add new task
+                task = {
+                    u'taskid': raw_activity[u'taskid'],
+                    u'activities': {raw_activity[u'date']: [activity]},
+                    }
+                ret_list.append(task)
+
+        return ret_list

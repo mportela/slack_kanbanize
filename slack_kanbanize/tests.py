@@ -124,27 +124,33 @@ class TestFeederClass(unittest.TestCase):
             mock.call(
                 {u'author': u'marcel.portela',
                  u'event': u'Assignee changed',
-                 u'text': u'New assignee: marcel.portela'},
+                 u'text': u'New assignee: marcel.portela',
+                 u'formatted_message': u'msg fmted 1'}
             ),
             mock.call(
                 {u'author': u'marcel.portela',
                  u'event': u'Task moved',
-                 u'text': u"From 'J\xe1 detalhados' to 'In Progress.Fazendo'"}
+                 u'text': u"From 'J\xe1 detalhados' to 'In"
+                          u" Progress.Fazendo'",
+                 u'formatted_message': u'msg fmted 2'}
             ),
             mock.call(
                 {u'author': u'pappacena',
                  u'event': u'Task moved',
-                 u'text': u"From 'J\xe1 detalhados' to 'Backlog'"}
+                 u'text': u"From 'J\xe1 detalhados' to 'Backlog'",
+                 u'formatted_message': u'msg fmted 3'}
             ),
             mock.call(
                 {u'author': u'pappacena',
                  u'event': u'Task moved',
-                 u'text': u"From 'Backlog' to 'J\xe1 detalhados'"}
+                 u'text': u"From 'Backlog' to 'J\xe1 detalhados'",
+                 u'formatted_message': u'msg fmted 4'}
             ),
             mock.call(
                 {u'author': u'pappacena',
                  u'event': u'Assignee changed',
-                 u'text': u'New assignee: marcel.portela'}
+                 u'text': u'New assignee: marcel.portela',
+                 u'formatted_message': u'msg fmted 5'}
             )
         ]
         self.assertEqual(exp_calls, mk_formatter.call_args_list)
@@ -161,7 +167,7 @@ class TestFeederClass(unittest.TestCase):
                         {u'author': u'marcel.portela',
                          u'event': u'Task moved',
                          u'text': u"From 'J\xe1 detalhados' to"
-                                  u"'In Progress.Fazendo'",
+                                  u" 'In Progress.Fazendo'",
                          u'formatted_message': u'msg fmted 2'},
                     ]
                 }
@@ -232,7 +238,7 @@ class TestFeederClass(unittest.TestCase):
                         {u'author': u'marcel.portela',
                          u'event': u'Task moved',
                          u'text': u"From 'J\xe1 detalhados' to"
-                                  u"'In Progress.Fazendo'",
+                                  u" 'In Progress.Fazendo'",
                          u'formatted_message': u'foo formated data'},
                     ]
                 }
