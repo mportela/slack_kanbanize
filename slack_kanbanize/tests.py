@@ -77,5 +77,168 @@ class TestFeederClass(unittest.TestCase):
                                       unfurl_links=1)
         self.assertEqual(True, ret, "must return True when ok")
 
+    @mock.patch.object(feeder.Feeder, 'default_message_formatter_function')
+    def test_parse_kambanize_activities_without_formatter(self, mk_formatter):
+        """
+            test parse activities with default formatter
+            simulatte complex possibilities to be grouped and returned:
+                - 2 activities in same task / date
+                - 2 activities in same task / different dates
+                - 1 activity in other task / date
+        """
+        mk_formatter.side_effect = [u'msg fmted 1', u'msg fmted 2',
+                                    u'msg fmted 3', u'msg fmted 4',
+                                    u'msg fmted 5']
+        raw_data = {u'activities': [
+            {u'author': u'marcel.portela',
+             u'date': u'2014-10-02 20:21:06',
+             u'event': u'Assignee changed',
+             u'taskid': u'133',
+             u'text': u'New assignee: marcel.portela'},
+            {u'author': u'marcel.portela',
+             u'date': u'2014-10-02 20:21:06',
+             u'event': u'Task moved',
+             u'taskid': u'133',
+             u'text': u"From 'J\xe1 detalhados' to 'In Progress.Fazendo'"},
+            {u'author': u'pappacena',
+             u'date': u'2014-10-02 19:25:36',
+             u'event': u'Task moved',
+             u'taskid': u'119',
+             u'text': u"From 'J\xe1 detalhados' to 'Backlog'"},
+            {u'author': u'pappacena',
+             u'date': u'2014-10-02 19:26:36',
+             u'event': u'Task moved',
+             u'taskid': u'119',
+             u'text': u"From 'Backlog' to 'J\xe1 detalhados'"},
+            {u'author': u'pappacena',
+             u'date': u'2014-10-02 19:36:36',
+             u'event': u'Assignee changed',
+             u'taskid': u'121',
+             u'text': u'New assignee: marcel.portela'}
+            ]
+        }
+
+        ret = self.obj._parse_kambanize_activities(raw_data)
+
+        exp_calls = [
+            mock.call(
+                {u'author': u'marcel.portela',
+                 u'event': u'Assignee changed',
+                 u'text': u'New assignee: marcel.portela'},
+            ),
+            mock.call(
+                {u'author': u'marcel.portela',
+                 u'event': u'Task moved',
+                 u'text': u"From 'J\xe1 detalhados' to 'In Progress.Fazendo'"}
+            ),
+            mock.call(
+                {u'author': u'pappacena',
+                 u'event': u'Task moved',
+                 u'text': u"From 'J\xe1 detalhados' to 'Backlog'"}
+            ),
+            mock.call(
+                {u'author': u'pappacena',
+                 u'event': u'Task moved',
+                 u'text': u"From 'Backlog' to 'J\xe1 detalhados'"}
+            ),
+            mock.call(
+                {u'author': u'pappacena',
+                 u'event': u'Assignee changed',
+                 u'text': u'New assignee: marcel.portela'}
+            )
+        ]
+        self.assertEqual(exp_calls, mk_formatter.call_args_list)
+
+        #expected ret - 3 tasks
+        exp_ret = [
+            {u'taskid': u'133',
+             u'activities': {
+                    u'2014-10-02 20:21:06': [
+                        {u'author': u'marcel.portela',
+                         u'event': u'Assignee changed',
+                         u'text': u'New assignee: marcel.portela',
+                         u'formatted_message': u'msg fmted 1'},
+                        {u'author': u'marcel.portela',
+                         u'event': u'Task moved',
+                         u'text': u"From 'J\xe1 detalhados' to"
+                                  u"'In Progress.Fazendo'",
+                         u'formatted_message': u'msg fmted 2'},
+                    ]
+                }
+            },
+            {u'taskid': u'119',
+             u'activities': {
+                    u'2014-10-02 19:25:36': [
+                        {u'author': u'pappacena',
+                         u'event': u'Task moved',
+                         u'text': u"From 'J\xe1 detalhados' to 'Backlog'",
+                         u'formatted_message': u'msg fmted 3'},
+                    ],
+                    u'2014-10-02 19:26:36': [
+                        {u'author': u'pappacena',
+                         u'event': u'Task moved',
+                         u'text': u"From 'Backlog' to 'J\xe1 detalhados'",
+                         u'formatted_message': u'msg fmted 4'},
+                    ],
+                }
+            },
+            {u'taskid': u'121',
+             u'activities': {
+                    u'2014-10-02 19:36:36': [
+                        {u'author': u'pappacena',
+                         u'event': u'Assignee changed',
+                         u'text': u'New assignee: marcel.portela',
+                         u'formatted_message': u'msg fmted 5'}
+                    ]
+                }
+            }
+        ]
+        self.assertEqual(exp_ret, ret)
+
+    def test_parse_kambanize_activities_with_formatter(self):
+        """
+            test parse activities with some formatter function passed
+            as argument
+            simulatte the following data to be grouped and returned:
+                - 2 activities in same task / date
+        """
+        #simulated formatter function to be used
+        def new_formatter(data):
+            return u'foo formated data'
+
+        raw_data = {u'activities': [
+            {u'author': u'marcel.portela',
+             u'date': u'2014-10-02 20:21:06',
+             u'event': u'Assignee changed',
+             u'taskid': u'133',
+             u'text': u'New assignee: marcel.portela'},
+            {u'author': u'marcel.portela',
+             u'date': u'2014-10-02 20:21:06',
+             u'event': u'Task moved',
+             u'taskid': u'133',
+             u'text': u"From 'J\xe1 detalhados' to 'In Progress.Fazendo'"}
+        ]}
+
+        ret = self.obj._parse_kambanize_activities(raw_data, new_formatter)
+
+        exp_ret = [
+            {u'taskid': u'133',
+             u'activities': {
+                    u'2014-10-02 20:21:06': [
+                        {u'author': u'marcel.portela',
+                         u'event': u'Assignee changed',
+                         u'text': u'New assignee: marcel.portela',
+                         u'formatted_message': u'foo formated data'},
+                        {u'author': u'marcel.portela',
+                         u'event': u'Task moved',
+                         u'text': u"From 'J\xe1 detalhados' to"
+                                  u"'In Progress.Fazendo'",
+                         u'formatted_message': u'foo formated data'},
+                    ]
+                }
+            }
+        ]
+        self.assertEqual(exp_ret, ret)
+
 if __name__ == '__main__':
     unittest.main()
