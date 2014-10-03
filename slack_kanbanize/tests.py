@@ -249,11 +249,11 @@ class TestFeederClass(unittest.TestCase):
                                                                     activity)
 
         exp_str = u":octocat: User: *marcel.portela* Event: Assignee"\
-                  u" changed: to *marcel.portela*"
+                  u" changed: New assignee: marcel.portela"
 
         self.assertEqual(exp_str, formatted_str)
 
-    def test_default_message_formatter_function_with_know_event(self):
+    def test_default_message_formatter_function_with_unknow_event(self):
         activity = {u'author': u'marcel.portela',
                     u'event': u'Foo other event',
                     u'text': u'foo msg text'}

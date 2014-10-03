@@ -102,8 +102,20 @@ class Feeder(object):
             u'External link changed': ':link:',
             u'Tags changed': ':triangular_flag_on_post:'
             }
-        return 'todo implement it'
-        pass
+        emoji = ''
+        event = activity_data.get(u'event', u'')
+        user = '*%s*' % activity_data.get(u'author', u'')
+        text = activity_data.get(u'text', u'')
+        try:
+            emoji = '%s ' % events_emoji_traslator[event]
+        except KeyError, e:
+            # case of event not know, just return the name with italic format
+            event = u'_%s_' % event
+
+        msg = u"%sUser: %s Event: %s"\
+              u": %s" % (emoji, user, event, text)
+
+        return msg
 
     def _parse_kambanize_activities(self, raw_data,
                 msg_formatter_function=_default_message_formatter_function):
