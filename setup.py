@@ -38,8 +38,14 @@ setup(
     dependency_links = ['https://github.com/mportela/python-kanbanize/tarball/master#egg=python-kanbanize-0.2.1',
                         'https://github.com/mportela/pyslack/tarball/master#egg=pyslack-0.3.0'],
     install_requires = reqs,
-    packages=find_packages(),
+    package_dir={'': 'slack_kanbanize'},
+    packages=[''] + find_packages('slack_kanbanize'),
     license = 'GNU GPL V2',
-    keywords ='slack notificator kambanize plugin',
+    keywords ='slack notificator kanbanize plugin',
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "slack_kanbanize_feeder = main:process"
+        ],
+    }
 )
