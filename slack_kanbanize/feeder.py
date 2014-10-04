@@ -2,6 +2,7 @@
 
 import datetime
 import copy
+import json
 
 from dateutil import tz
 from python_kanbanize.wrapper import Kanbanize
@@ -23,6 +24,8 @@ class Feeder(object):
             @kanbanize_board_id - kanbanize board_id to be monitored
             @kanbanize_timedelta_collect - timedelta to collect data from
                                                   N time before now
+            @kanbanize_message_fomatter - function to override the format of
+                                          '_default_message_formatter_function'
             @slack_token - slack token autorization to be used
             @slack_channel - slack channel to be used
             @slack_user - slack user to be used
@@ -45,7 +48,8 @@ class Feeder(object):
         self.slack_client = SlackClient(slack_token)
         self.kanbanize_client = Kanbanize(kanbanize_api_key)
 
-    def _get_kanbanize_board_activities(self, from_date, to_date):
+    def _get_kanbanize_board_activities(self, from_date=None,
+                                        to_date=datetime.datetime.now()):
         """
             Used to get python-kanbanize.get_board_activities
             Arguments:
@@ -53,6 +57,9 @@ class Feeder(object):
             @to_date - datetime object to be used in get_board_activities
             Return a list with board activities
         """
+        # todo test it
+        if not from_date:
+            from_date = to_date - self.kanbanize_opts['collect_timedelta']
 
         from_date_aware = from_date.replace(tzinfo=Feeder.LOCAL_ZONE)
         from_dt_utc_string = from_date_aware.astimezone(
@@ -144,6 +151,8 @@ class Feeder(object):
         ret_list = []
         for raw_activity in raw_activities:
 
+            # todo mock testing passing here to not break when
+            # not in local config time
             # converting date comming from utc to local time
             date_in_naive_utc = datetime.datetime.strptime(
                                                   raw_activity[u'date'],
@@ -225,9 +234,21 @@ class Feeder(object):
 
     def run(self):
         """
-            Main method to start this Feeder 
+            Main method to start this Feeder to collect kambanize activities
+            and post the slack message with the collected data
         """
-        #_get_kanbanize_board_activities(start, end)
-        #_parse_kambanize_activities(raw_data, function_format)
-        #_format_slack_messages(activities)
+        # todo test it
+        raw_data = self._get_kanbanize_board_activities()
+        activities = self._parse_kambanize_activities(raw_data,
+                            self.kanbanize_opts['kanbanize_message_fomatter'])
+        attachments = self._format_slack_messages(activities)
 
+        if attachments:
+            kwargs = {
+                'text': u"Kambanize --> Slack",
+                'icon_emoji': u':alien:',
+                'attachments': json.dumps(attachments)
+            }
+            self._post_slack_message(**kwargs)
+
+        return True
