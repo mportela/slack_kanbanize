@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import datetime
+import copy
 
 from dateutil import tz
 from python_kanbanize.wrapper import Kanbanize
@@ -140,6 +141,17 @@ class Feeder(object):
         raw_activities = raw_data.get(u'activities', [])
         ret_list = []
         for raw_activity in raw_activities:
+
+            # converting date comming from utc to local time
+            date_in_naive_utc = datetime.datetime.strptime(
+                                                  raw_activity[u'date'],
+                                                  "%Y-%m-%d %H:%M:%S")
+            date_in_aware_utc = date_in_naive_utc.replace(
+                                                        tzinfo=Feeder.UTC_ZONE)
+            date_converted_local = date_in_aware_utc.astimezone(
+                                                   Feeder.LOCAL_ZONE).strftime(
+                                                           "%Y-%m-%d %H:%M:%S")
+
             activity = {
                 u'author': raw_activity[u'author'],
                 u'event': raw_activity[u'event'],
@@ -149,14 +161,14 @@ class Feeder(object):
             for item in ret_list:
                 # if in result yet, update the date / activities
                 if item[u'taskid'] == raw_activity[u'taskid']:
-                    item[u'activities'].setdefault(raw_activity[u'date'], [])
-                    item[u'activities'][raw_activity[u'date']].append(activity)
+                    item[u'activities'].setdefault(date_converted_local, [])
+                    item[u'activities'][date_converted_local].append(activity)
                     break
             else:
                 # if not in result yet, add new task
                 task = {
                     u'taskid': raw_activity[u'taskid'],
-                    u'activities': {raw_activity[u'date']: [activity]},
+                    u'activities': {date_converted_local: [activity]},
                     }
                 ret_list.append(task)
 
@@ -172,4 +184,39 @@ class Feeder(object):
             Return list with dicts of attachments in slack format
             see tests for example
         """
-        pass
+        ret_list = []
+        attachment_template = {
+                u'color': u'good',
+                u'mrkdwn_in': [u'fields'],
+                u'fields': [
+                        {
+                            u'title': u'Message',
+                            u'value': u''
+                        },
+                        {
+                            u'title': u'Task',
+                            u'value': u'',
+                            u'short': True
+                        },
+                        {
+                            u'title': u'Date',
+                            u'value': u'',
+                            u'short': True
+                        }
+                ]
+        }
+
+        for activity in activities:
+            for date in activity['activities']:
+                attach = copy.deepcopy(attachment_template)
+                attach[u'fields'][1][u'value'] =\
+                    '<https://kanbanize.com/ctrl_board/%s/%s|%s>' %\
+                            (self.kanbanize_opts['board_id'],
+                             activity['taskid'], activity['taskid'])
+                attach[u'fields'][2][u'value'] = date
+                msgs = [item['formatted_message'] for item in activity[
+                                                        'activities'][date]]
+                attach[u'fields'][0][u'value'] = u'\n'.join(msgs)
+                ret_list.append(attach)
+
+        return ret_list

@@ -13,15 +13,16 @@ from pyslack import SlackClient
 class TestFeederClass(unittest.TestCase):
 
     def setUp(self):
-        self.obj = feeder.Feeder("foo_kanbanize_api_key", 3, "foo_slack_token",
+        self.obj = feeder.Feeder("foo_kanbanize_api_key", 4, "foo_slack_token",
                                  "foo_slack_channel")
         self.utc_zone = tz.tzutc()
         self.local_zone = tz.tzlocal()
+        self.maxDiff = None
 
     def test_basic_instance(self):
         exp_kanbanize_opts = {
             'api_key': "foo_kanbanize_api_key",
-            'board_id': 3,
+            'board_id': 4,
             'collect_minutes_timedelta': 2
         }
         exp_slack_opts = {
@@ -159,7 +160,7 @@ class TestFeederClass(unittest.TestCase):
         exp_ret = [
             {u'taskid': u'133',
              u'activities': {
-                    u'2014-10-02 20:21:06': [
+                    u'2014-10-02 17:21:06': [
                         {u'author': u'marcel.portela',
                          u'event': u'Assignee changed',
                          u'text': u'New assignee: marcel.portela',
@@ -174,13 +175,13 @@ class TestFeederClass(unittest.TestCase):
             },
             {u'taskid': u'119',
              u'activities': {
-                    u'2014-10-02 19:25:36': [
+                    u'2014-10-02 16:25:36': [
                         {u'author': u'pappacena',
                          u'event': u'Task moved',
                          u'text': u"From 'J\xe1 detalhados' to 'Backlog'",
                          u'formatted_message': u'msg fmted 3'},
                     ],
-                    u'2014-10-02 19:26:36': [
+                    u'2014-10-02 16:26:36': [
                         {u'author': u'pappacena',
                          u'event': u'Task moved',
                          u'text': u"From 'Backlog' to 'J\xe1 detalhados'",
@@ -190,7 +191,7 @@ class TestFeederClass(unittest.TestCase):
             },
             {u'taskid': u'121',
              u'activities': {
-                    u'2014-10-02 19:36:36': [
+                    u'2014-10-02 16:36:36': [
                         {u'author': u'pappacena',
                          u'event': u'Assignee changed',
                          u'text': u'New assignee: marcel.portela',
@@ -230,7 +231,7 @@ class TestFeederClass(unittest.TestCase):
         exp_ret = [
             {u'taskid': u'133',
              u'activities': {
-                    u'2014-10-02 20:21:06': [
+                    u'2014-10-02 17:21:06': [
                         {u'author': u'marcel.portela',
                          u'event': u'Assignee changed',
                          u'text': u'New assignee: marcel.portela',
