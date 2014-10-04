@@ -15,7 +15,8 @@ class Feeder(object):
 
     def __init__(self, kanbanize_api_key, kanbanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
-                 kanbanize_timedelta_collect_minutes=2):
+                 kanbanize_timedelta_collect_minutes=2,
+                 kanbanize_message_fomatter=None):
         """
             Arguments:
             @kanbanize_api_key - kanbanize appi key to be used
@@ -33,7 +34,8 @@ class Feeder(object):
         self.kanbanize_opts = {
             'api_key': kanbanize_api_key,
             'board_id': kanbanize_board_id,
-            'collect_minutes_timedelta': kanbanize_timedelta_collect_minutes
+            'collect_minutes_timedelta': kanbanize_timedelta_collect_minutes,
+            'kanbanize_message_fomatter': kanbanize_message_fomatter
         }
         self.slack_opts = {
             'token': slack_token,
