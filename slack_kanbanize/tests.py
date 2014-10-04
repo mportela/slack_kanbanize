@@ -23,7 +23,7 @@ class TestFeederClass(unittest.TestCase):
         exp_kanbanize_opts = {
             'api_key': "foo_kanbanize_api_key",
             'board_id': 4,
-            'collect_minutes_timedelta': 2,
+            'collect_timedelta': datetime.timedelta(minutes=2),
             'kanbanize_message_fomatter': None
         }
         exp_slack_opts = {

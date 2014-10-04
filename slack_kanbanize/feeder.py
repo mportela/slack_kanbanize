@@ -15,14 +15,14 @@ class Feeder(object):
 
     def __init__(self, kanbanize_api_key, kanbanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
-                 kanbanize_timedelta_collect_minutes=2,
+                 kanbanize_timedelta_collect=datetime.timedelta(minutes=2),
                  kanbanize_message_fomatter=None):
         """
             Arguments:
             @kanbanize_api_key - kanbanize appi key to be used
             @kanbanize_board_id - kanbanize board_id to be monitored
-            @kanbanize_timedelta_collect_minutes - minutes to collect data from
-                                                  N minutes before now
+            @kanbanize_timedelta_collect - timedelta to collect data from
+                                                  N time before now
             @slack_token - slack token autorization to be used
             @slack_channel - slack channel to be used
             @slack_user - slack user to be used
@@ -34,7 +34,7 @@ class Feeder(object):
         self.kanbanize_opts = {
             'api_key': kanbanize_api_key,
             'board_id': kanbanize_board_id,
-            'collect_minutes_timedelta': kanbanize_timedelta_collect_minutes,
+            'collect_timedelta': kanbanize_timedelta_collect,
             'kanbanize_message_fomatter': kanbanize_message_fomatter
         }
         self.slack_opts = {
@@ -222,3 +222,12 @@ class Feeder(object):
                 ret_list.append(attach)
 
         return ret_list
+
+    def run(self):
+        """
+            Main method to start this Feeder 
+        """
+        #_get_kanbanize_board_activities(start, end)
+        #_parse_kambanize_activities(raw_data, function_format)
+        #_format_slack_messages(activities)
+
