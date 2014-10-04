@@ -161,3 +161,15 @@ class Feeder(object):
                 ret_list.append(task)
 
         return ret_list
+
+    def _format_slack_messages(self, activities):
+        """
+            Used to process slack messages returned from
+            '_parse_kambanize_activities' and return formated messages as
+            expected by slack api
+            Arguments:
+            @activities list of parsed kambanize activities
+            Return list with dicts of attachments in slack format
+            see tests for example
+        """
+        pass

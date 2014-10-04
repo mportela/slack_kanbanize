@@ -272,5 +272,105 @@ class TestFeederClass(unittest.TestCase):
 
         self.assertEqual(exp_str, formatted_str)
 
+    def test_format_slack_messages(self):
+        activities = [
+            {u'taskid': u'133',
+             u'activities': {
+                    u'2014-10-02 20:21:06': [
+                        {u'author': u'marcel.portela',
+                         u'event': u'Assignee changed',
+                         u'text': u'New assignee: marcel.portela',
+                         u'formatted_message': u'foo formated data1'},
+                        {u'author': u'marcel.portela',
+                         u'event': u'Task moved',
+                         u'text': u"From 'J\xe1 detalhados' to"
+                                  u" 'In Progress.Fazendo'",
+                         u'formatted_message': u'foo formated data2'}
+                    ],
+                    u'2014-10-02 20:31:06': [
+                        {u'author': u'marcel.portela',
+                         u'event': u'Assignee changed',
+                         u'text': u'New assignee: marcel.portela',
+                         u'formatted_message': u'foo formated data3'}
+                    ]
+                }
+            },
+            {u'taskid': u'134',
+             u'activities': {
+                    u'2014-10-02 20:22:06': [
+                        {u'author': u'marcel.portela',
+                         u'event': u'Assignee changed',
+                         u'text': u'New assignee: marcel.portela',
+                         u'formatted_message': u'foo formated data4'}
+                    ]
+                }
+            }
+        ]
+
+        formatted = self.obj._format_slack_messages(activities)
+
+        exp_result = [{u'color': u'good',
+                       u'mrkdwn_in': [u'fields'],
+                       u'fields': [
+                            {
+                            u'title': u'Message',
+                            u'value': u'foo formated data1\nfoo formated data2'
+                            },
+                            {
+                            u'title': u'Task',
+                            u'value': u'<https://kanbanize.com/ctrl_board/4/'
+                                      u'133|133>',
+                            u'short': True
+                            },
+                            {
+                            u'title': u'Date',
+                            u'value': u'2014-10-02 20:21:06',
+                            u'short': True
+                            }
+                         ]
+                      },
+                      {u'color': u'good',
+                       u'mrkdwn_in': [u'fields'],
+                       u'fields': [
+                            {
+                            u'title': u'Message',
+                            u'value': u'foo formated data3'
+                            },
+                            {
+                            u'title': u'Task',
+                            u'value': u'<https://kanbanize.com/ctrl_board/4/'
+                                      u'133|133>',
+                            u'short': True
+                            },
+                            {
+                            u'title': u'Date',
+                            u'value': u'2014-10-02 20:31:06',
+                            u'short': True
+                            }
+                         ]
+                      },
+                      {u'color': u'good',
+                       u'mrkdwn_in': [u'fields'],
+                       u'fields': [
+                            {
+                            u'title': u'Message',
+                            u'value': u'foo formated data4'
+                            },
+                            {
+                            u'title': u'Task',
+                            u'value': u'<https://kanbanize.com/ctrl_board/4/'
+                                      u'134|134>',
+                            u'short': True
+                            },
+                            {
+                            u'title': u'Date',
+                            u'value': u'2014-10-02 20:22:06',
+                            u'short': True
+                            }
+                         ]
+                      }
+                    ]
+        self.assertEqual(exp_result, formatted)
+
 if __name__ == '__main__':
     unittest.main()
