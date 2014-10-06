@@ -25,7 +25,7 @@ class TestFeederClass(unittest.TestCase):
         exp_kanbanize_opts = {
             'api_key': "foo_kanbanize_api_key",
             'board_id': 4,
-            'collect_timedelta': datetime.timedelta(minutes=2),
+            'collect_timedelta': datetime.timedelta(minutes=60),
             'kanbanize_message_fomatter': None
         }
         exp_slack_opts = {
@@ -105,6 +105,12 @@ class TestFeederClass(unittest.TestCase):
                                       parse="full",
                                       unfurl_links=1)
         self.assertEqual(True, ret, "must return True when ok")
+
+    def test_parse_kambanize_activities_with_nodata_msg(self):
+        msg = u'No activities found for the specified board and time range.'\
+              u' Make sure all parameters are set correctly.'
+        ret = self.obj._parse_kambanize_activities(msg)
+        self.assertEqual([], ret)
 
     @mock.patch('dateutil.tz.tzlocal')
     @mock.patch.object(feeder.Feeder, '_default_message_formatter_function')
