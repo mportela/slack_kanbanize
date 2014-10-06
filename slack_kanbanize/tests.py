@@ -2,6 +2,7 @@
 
 import unittest
 import datetime
+import json
 
 import mock
 from freezegun import freeze_time
@@ -404,6 +405,34 @@ class TestFeederClass(unittest.TestCase):
                       }
                     ]
         self.assertEqual(exp_result, formatted)
+
+    @mock.patch.object(feeder.Feeder, '_post_slack_message')
+    @mock.patch.object(feeder.Feeder, '_format_slack_messages')
+    @mock.patch.object(feeder.Feeder, '_parse_kambanize_activities')
+    @mock.patch.object(feeder.Feeder, '_get_kanbanize_board_activities')
+    def test_run(self, mk_get_kanbanize, mk_parse_kanbanize,
+                 mk_format_messages, mk_post_message):
+
+        mk_ret_kanbanize = mock.Mock()
+        mk_get_kanbanize.return_value = mk_ret_kanbanize
+        mk_ret_parse_kanbanize = mock.Mock()
+        mk_parse_kanbanize.return_value = mk_ret_parse_kanbanize
+        mk_ret_format = [{'foor': 'blah'}]
+        mk_format_messages.return_value = mk_ret_format
+
+        ret = self.obj.run()
+
+        self.assertTrue(ret, "method should return True")
+        mk_get_kanbanize.assert_called_once_with()
+        mk_parse_kanbanize.assert_called_once_with(mk_ret_kanbanize,
+            self.obj.kanbanize_opts['kanbanize_message_fomatter'])
+        mk_format_messages.assert_called_once_with(mk_ret_parse_kanbanize)
+        exp_final_call_args = {
+                             'text': u"Kambanize --> Slack",
+                             'icon_emoji': u':alien:',
+                             'attachments': json.dumps(mk_ret_format)}
+             
+        mk_post_message.assert_called_with(**exp_final_call_args)
 
 if __name__ == '__main__':
     unittest.main()
