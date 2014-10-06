@@ -14,7 +14,7 @@ class Feeder(object):
 
     def __init__(self, kanbanize_api_key, kanbanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
-                 kanbanize_timedelta_collect=datetime.timedelta(minutes=2),
+                 kanbanize_timedelta_collect=datetime.timedelta(minutes=60),
                  kanbanize_message_fomatter=None):
         """
             Arguments:
@@ -145,6 +145,9 @@ class Feeder(object):
                              u'formatted_message': 'foo fmted'}]}
              },...]
         """
+        if u"No activities found for the specified board and time range" in\
+            raw_data:
+            return []
         if not msg_formatter_function:
             msg_formatter_function =\
                 Feeder._default_message_formatter_function
@@ -236,9 +239,8 @@ class Feeder(object):
     def run(self):
         """
             Main method to start this Feeder to collect kambanize activities
-            and post the slack message with the collected data
+            and post the slack message with all collected data
         """
-        # todo test it
         raw_data = self._get_kanbanize_board_activities()
         activities = self._parse_kambanize_activities(raw_data,
                             self.kanbanize_opts['kanbanize_message_fomatter'])
