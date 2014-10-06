@@ -2,3 +2,4 @@ python-kanbanize
 pyslack
 python-dateutil
 mock
+freezegun

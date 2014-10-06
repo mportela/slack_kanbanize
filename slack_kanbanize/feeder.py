@@ -11,8 +11,6 @@ from pyslack import SlackClient
 
 class Feeder(object):
 
-    UTC_ZONE = tz.tzutc()
-    LOCAL_ZONE = tz.tzlocal()
 
     def __init__(self, kanbanize_api_key, kanbanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
@@ -49,7 +47,7 @@ class Feeder(object):
         self.kanbanize_client = Kanbanize(kanbanize_api_key)
 
     def _get_kanbanize_board_activities(self, from_date=None,
-                                        to_date=datetime.datetime.now()):
+                                        to_date=None):
         """
             Used to get python-kanbanize.get_board_activities
             Arguments:
@@ -57,17 +55,20 @@ class Feeder(object):
             @to_date - datetime object to be used in get_board_activities
             Return a list with board activities
         """
-        # todo test it
+        if not to_date:
+            to_date = datetime.datetime.now()
         if not from_date:
             from_date = to_date - self.kanbanize_opts['collect_timedelta']
+        UTC_ZONE = tz.tzutc()
+        LOCAL_ZONE = tz.tzlocal()
 
-        from_date_aware = from_date.replace(tzinfo=Feeder.LOCAL_ZONE)
+        from_date_aware = from_date.replace(tzinfo=LOCAL_ZONE)
         from_dt_utc_string = from_date_aware.astimezone(
-                                                    Feeder.UTC_ZONE).strftime(
+                                                    UTC_ZONE).strftime(
                                                            "%Y-%m-%d %H:%M:%S")
-        to_date_aware = to_date.replace(tzinfo=Feeder.LOCAL_ZONE)
+        to_date_aware = to_date.replace(tzinfo=LOCAL_ZONE)
         to_dt_utc_string = to_date_aware.astimezone(
-                                                    Feeder.UTC_ZONE).strftime(
+                                                    UTC_ZONE).strftime(
                                                            "%Y-%m-%d %H:%M:%S")
 
         return self.kanbanize_client.get_board_activities(
@@ -149,18 +150,18 @@ class Feeder(object):
                 Feeder._default_message_formatter_function
         raw_activities = raw_data.get(u'activities', [])
         ret_list = []
+        UTC_ZONE = tz.tzutc()
+        LOCAL_ZONE = tz.tzlocal()
         for raw_activity in raw_activities:
 
-            # todo mock testing passing here to not break when
-            # not in local config time
             # converting date comming from utc to local time
             date_in_naive_utc = datetime.datetime.strptime(
                                                   raw_activity[u'date'],
                                                   "%Y-%m-%d %H:%M:%S")
             date_in_aware_utc = date_in_naive_utc.replace(
-                                                        tzinfo=Feeder.UTC_ZONE)
+                                                        tzinfo=UTC_ZONE)
             date_converted_local = date_in_aware_utc.astimezone(
-                                                   Feeder.LOCAL_ZONE).strftime(
+                                                   LOCAL_ZONE).strftime(
                                                            "%Y-%m-%d %H:%M:%S")
 
             activity = {

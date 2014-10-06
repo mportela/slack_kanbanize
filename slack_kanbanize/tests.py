@@ -1,9 +1,10 @@
 # coding=utf-8
 
 import unittest
-import mock
 import datetime
 
+import mock
+from freezegun import freeze_time
 from dateutil import tz
 import feeder
 from python_kanbanize.wrapper import Kanbanize
@@ -56,6 +57,31 @@ class TestFeederClass(unittest.TestCase):
                                         exp_to_date)
         self.assertEqual(mk_ret, ret)
 
+    @freeze_time("2012-01-14 10:00:00")
+    @mock.patch.object(Kanbanize, 'get_board_activities')
+    def test_get_kanbanize_board_activities_without_arguments(self,
+                                                            mk_get_activities):
+        mk_to_date = datetime.datetime.now()
+        mk_from_date = datetime.datetime.now() -\
+            self.obj.kanbanize_opts['collect_timedelta']
+
+        mk_ret = [{'type': 'blah'}, {'type': 'blah'}, {'type': 'blah2'}]
+
+        mk_get_activities.return_value = mk_ret
+        ret = self.obj._get_kanbanize_board_activities()
+
+        exp_from_date = mk_from_date.replace(tzinfo=self.local_zone)
+        exp_from_date = exp_from_date.astimezone(self.utc_zone).strftime(
+                                                        "%Y-%m-%d %H:%M:%S")
+        exp_to_date = mk_to_date.replace(tzinfo=self.local_zone)
+        exp_to_date = exp_to_date.astimezone(self.utc_zone).strftime(
+                                                        "%Y-%m-%d %H:%M:%S")
+        mk_get_activities.assert_called_once_with(
+                                        self.obj.kanbanize_opts['board_id'],
+                                        exp_from_date,
+                                        exp_to_date)
+        self.assertEqual(mk_ret, ret)
+
     @mock.patch.object(SlackClient, 'chat_post_message')
     def test_simple_post_slack_message(self, mk_post_message):
         mk_post_message.return_value = {u'ok': True}
@@ -79,8 +105,10 @@ class TestFeederClass(unittest.TestCase):
                                       unfurl_links=1)
         self.assertEqual(True, ret, "must return True when ok")
 
+    @mock.patch('dateutil.tz.tzlocal')
     @mock.patch.object(feeder.Feeder, '_default_message_formatter_function')
-    def test_parse_kambanize_activities_without_formatter(self, mk_formatter):
+    def test_parse_kambanize_activities_without_formatter(self, mk_formatter,
+                                                          fake_local):
         """
             test parse activities with default formatter
             simulatte complex possibilities to be grouped and returned:
@@ -88,6 +116,7 @@ class TestFeederClass(unittest.TestCase):
                 - 2 activities in same task / different dates
                 - 1 activity in other task / date
         """
+        fake_local.return_value = tz.tzoffset(None, -10800)
         mk_formatter.side_effect = [u'msg fmted 1', u'msg fmted 2',
                                     u'msg fmted 3', u'msg fmted 4',
                                     u'msg fmted 5']
@@ -203,13 +232,15 @@ class TestFeederClass(unittest.TestCase):
         ]
         self.assertEqual(exp_ret, ret)
 
-    def test_parse_kambanize_activities_with_formatter(self):
+    @mock.patch('dateutil.tz.tzlocal')
+    def test_parse_kambanize_activities_with_formatter(self, fake_local):
         """
             test parse activities with some formatter function passed
             as argument
             simulatte the following data to be grouped and returned:
                 - 2 activities in same task / date
         """
+        fake_local.return_value = tz.tzoffset(None, -10800)
         # simulated formatter function to be used
         def new_formatter(data):
             return u'foo formated data'
