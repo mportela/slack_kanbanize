@@ -12,6 +12,11 @@ from python_kanbanize.wrapper import Kanbanize
 from pyslack import SlackClient
 
 
+class LastShownMessageTests(unittest.TestCase):
+    def test_save(self):
+        pass
+
+
 class TestFeederClass(unittest.TestCase):
 
     def setUp(self):

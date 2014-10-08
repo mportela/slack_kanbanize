@@ -3,6 +3,7 @@
 import datetime
 import copy
 import json
+import os
 
 from dateutil import tz
 from python_kanbanize.wrapper import Kanbanize
@@ -10,7 +11,7 @@ from pyslack import SlackClient
 
 
 class Feeder(object):
-
+    file_name = '.slack-kanbanize-last-msg'
 
     def __init__(self, kanbanize_api_key, kanbanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
@@ -45,6 +46,7 @@ class Feeder(object):
         }
         self.slack_client = SlackClient(slack_token)
         self.kanbanize_client = Kanbanize(kanbanize_api_key)
+        self.last_action_file = self._get_last_action_file()
 
     def _get_kanbanize_board_activities(self, from_date=None,
                                         to_date=None):
@@ -236,10 +238,15 @@ class Feeder(object):
 
         return ret_list
 
+    def _get_last_action_file(self):
+        home = os.path.expanduser('~')
+        file_path = os.path.join(home, self.file_name)
+        return os.open(file_path, os.O_RDWR | os.O_CREAT)
+
     def run(self):
         """
-            Main method to start this Feeder to collect kambanize activities
-            and post the slack message with all collected data
+        Main method to start this Feeder to collect kambanize activities
+        and post the slack message with all collected data
         """
         raw_data = self._get_kanbanize_board_activities()
         activities = self._parse_kambanize_activities(raw_data,
