@@ -13,8 +13,9 @@ from pyslack import SlackClient
 
 
 class LastShownMessageTests(unittest.TestCase):
-    def test_save(self):
-        pass
+    @mock.patch.object(feeder.Feeder, '_get_last_action_file')
+    def test_save(self, get_file):
+        file = get_file.return_value
 
 
 class TestFeederClass(unittest.TestCase):

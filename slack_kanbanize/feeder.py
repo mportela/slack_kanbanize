@@ -157,6 +157,9 @@ class Feeder(object):
         ret_list = []
         UTC_ZONE = tz.tzutc()
         LOCAL_ZONE = tz.tzlocal()
+
+        last_date = None
+
         for raw_activity in raw_activities:
 
             # converting date comming from utc to local time
@@ -168,6 +171,11 @@ class Feeder(object):
             date_converted_local = date_in_aware_utc.astimezone(
                                                    LOCAL_ZONE).strftime(
                                                            "%Y-%m-%d %H:%M:%S")
+            if last_date:
+                if date_in_naive_utc > last_date:
+                    last_date = date_in_naive_utc
+            else:
+                last_date = date_in_naive_utc
 
             activity = {
                 u'author': raw_activity[u'author'],
@@ -188,6 +196,8 @@ class Feeder(object):
                     u'activities': {date_converted_local: [activity]},
                     }
                 ret_list.append(task)
+
+        self._save_last_action_time(last_date)
 
         return ret_list
 
@@ -241,7 +251,15 @@ class Feeder(object):
     def _get_last_action_file(self):
         home = os.path.expanduser('~')
         file_path = os.path.join(home, self.file_name)
-        return os.open(file_path, os.O_RDWR | os.O_CREAT)
+        return open(file_path, 'w+')
+
+    def _save_last_action_time(self, date):
+        file = self.last_action_file
+        #date_str = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
+
+        file.truncate(0)
+        file.write(date.isoformat())
+        file.flush()
 
     def run(self):
         """
