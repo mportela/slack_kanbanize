@@ -158,7 +158,8 @@ class Feeder(object):
         UTC_ZONE = tz.tzutc()
         LOCAL_ZONE = tz.tzlocal()
 
-        last_date = None
+        last_date = self._get_last_action_time()
+        print 'last_date', last_date
 
         for raw_activity in raw_activities:
 
@@ -172,10 +173,11 @@ class Feeder(object):
                                                    LOCAL_ZONE).strftime(
                                                            "%Y-%m-%d %H:%M:%S")
             if last_date:
-                if date_in_naive_utc > last_date:
-                    last_date = date_in_naive_utc
-            else:
-                last_date = date_in_naive_utc
+                print date_in_naive_utc, last_date
+                if date_in_naive_utc <= last_date:
+                    print 'pulou'
+                    continue
+                print 'seguiu'
 
             activity = {
                 u'author': raw_activity[u'author'],
@@ -197,7 +199,10 @@ class Feeder(object):
                     }
                 ret_list.append(task)
 
-        self._save_last_action_time(last_date)
+        first_action_date = datetime.datetime.strptime(
+            raw_activity[u'date'],
+            "%Y-%m-%d %H:%M:%S")
+        self._save_last_action_time(first_action_date)
 
         return ret_list
 
@@ -251,15 +256,26 @@ class Feeder(object):
     def _get_last_action_file(self):
         home = os.path.expanduser('~')
         file_path = os.path.join(home, self.file_name)
-        return open(file_path, 'w+')
+        file = open(file_path, 'a+')
+        file.seek(0)
+        return file
 
     def _save_last_action_time(self, date):
         file = self.last_action_file
-        #date_str = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
 
         file.truncate(0)
-        file.write(date.isoformat())
+        file.write(date.strftime('%Y-%m-%dT%H:%M:%S.%f'))
         file.flush()
+
+    def _get_last_action_time(self):
+        file = self.last_action_file
+        date_str = file.readline().strip()
+
+        if not date_str:
+            return None
+
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%f')
+        return date
 
     def run(self):
         """
@@ -278,5 +294,8 @@ class Feeder(object):
                 'attachments': json.dumps(attachments)
             }
             self._post_slack_message(**kwargs)
+
+        self.last_action_file.flush()
+        self.last_action_file.close()
 
         return True

@@ -13,9 +13,43 @@ from pyslack import SlackClient
 
 
 class LastShownMessageTests(unittest.TestCase):
+    @freeze_time("2012-01-14 10:11:12.001002")
     @mock.patch.object(feeder.Feeder, '_get_last_action_file')
     def test_save(self, get_file):
         file = get_file.return_value
+
+        fee = feeder.Feeder("foo_kanbanize_api_key", 4, "foo_slack_token",
+                                 "foo_slack_channel")
+        fee._save_last_action_time(datetime.datetime.now())
+
+        date = '2012-01-14T10:11:12.001002'
+
+        file.truncate.assert_called_with(0)
+        file.write.assert_called_with(date)
+
+    @mock.patch.object(feeder.Feeder, '_get_last_action_file')
+    def test_get_time(self, get_file):
+        file = get_file.return_value
+
+        file.readline.return_value = '2010-10-11T12:13:14.123456'
+
+        fee = feeder.Feeder("foo_kanbanize_api_key", 4, "foo_slack_token",
+                                 "foo_slack_channel")
+        time = fee._get_last_action_time()
+
+        self.assertEquals(time, datetime.datetime(2010, 10, 11, 12, 13, 14, 123456))
+
+    @mock.patch.object(feeder.Feeder, '_get_last_action_file')
+    def test_get_time_file_empty(self, get_file):
+        file = get_file.return_value
+
+        file.readline.return_value = ''
+
+        fee = feeder.Feeder("foo_kanbanize_api_key", 4, "foo_slack_token",
+                                 "foo_slack_channel")
+        time = fee._get_last_action_time()
+
+        self.assertEquals(time, None)
 
 
 class TestFeederClass(unittest.TestCase):
