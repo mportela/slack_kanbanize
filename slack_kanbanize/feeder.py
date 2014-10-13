@@ -130,13 +130,13 @@ class Feeder(object):
 
         return msg
 
-    def _parse_kambanize_activities(self, raw_data,
+    def _parse_kanbanize_activities(self, raw_data,
                 msg_formatter_function=None):
         """
             Used to process activities, grouping by same taskid / date
             Arguments:
             @raw_data - raw_data returned from
-                        kambanize._get_kanbanize_board_activities
+                        kanbanize._get_kanbanize_board_activities
             @msg_formatter_function - function to be used to format each msg
             Return list with objects grouped by taskid / date
             example of return:
@@ -159,7 +159,6 @@ class Feeder(object):
         LOCAL_ZONE = tz.tzlocal()
 
         last_date = self._get_last_action_time()
-        print 'last_date', last_date
 
         for raw_activity in raw_activities:
 
@@ -172,12 +171,6 @@ class Feeder(object):
             date_converted_local = date_in_aware_utc.astimezone(
                                                    LOCAL_ZONE).strftime(
                                                            "%Y-%m-%d %H:%M:%S")
-            if last_date:
-                print date_in_naive_utc, last_date
-                if date_in_naive_utc <= last_date:
-                    print 'pulou'
-                    continue
-                print 'seguiu'
 
             activity = {
                 u'author': raw_activity[u'author'],
@@ -209,10 +202,10 @@ class Feeder(object):
     def _format_slack_messages(self, activities):
         """
             Used to process slack messages returned from
-            '_parse_kambanize_activities' and return formated messages as
+            '_parse_kanbanize_activities' and return formated messages as
             expected by slack api
             Arguments:
-            @activities list of parsed kambanize activities
+            @activities list of parsed kanbanize activities
             Return list with dicts of attachments in slack format
             see tests for example
         """
@@ -279,17 +272,17 @@ class Feeder(object):
 
     def run(self):
         """
-        Main method to start this Feeder to collect kambanize activities
+        Main method to start this Feeder to collect kanbanize activities
         and post the slack message with all collected data
         """
         raw_data = self._get_kanbanize_board_activities()
-        activities = self._parse_kambanize_activities(raw_data,
+        activities = self._parse_kanbanize_activities(raw_data,
                             self.kanbanize_opts['kanbanize_message_fomatter'])
         attachments = self._format_slack_messages(activities)
 
         if attachments:
             kwargs = {
-                'text': u"Kambanize --> Slack",
+                'text': u"Kanbanize --> Slack",
                 'icon_emoji': u':alien:',
                 'attachments': json.dumps(attachments)
             }

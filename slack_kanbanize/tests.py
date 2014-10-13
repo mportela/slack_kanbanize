@@ -146,19 +146,19 @@ class TestFeederClass(unittest.TestCase):
                                       unfurl_links=1)
         self.assertEqual(True, ret, "must return True when ok")
 
-    def test_parse_kambanize_activities_with_nodata_msg(self):
+    def test_parse_kanbanize_activities_with_nodata_msg(self):
         msg = u'No activities found for the specified board and time range.'\
               u' Make sure all parameters are set correctly.'
-        ret = self.obj._parse_kambanize_activities(msg)
+        ret = self.obj._parse_kanbanize_activities(msg)
         self.assertEqual([], ret)
 
     @mock.patch('dateutil.tz.tzlocal')
     @mock.patch.object(feeder.Feeder, '_default_message_formatter_function')
-    def test_parse_kambanize_activities_without_formatter(self, mk_formatter,
+    def test_parse_kanbanize_activities_without_formatter(self, mk_formatter,
                                                           fake_local):
         """
             test parse activities with default formatter
-            simulatte complex possibilities to be grouped and returned:
+            simulate complex possibilities to be grouped and returned:
                 - 2 activities in same task / date
                 - 2 activities in same task / different dates
                 - 1 activity in other task / date
@@ -196,7 +196,7 @@ class TestFeederClass(unittest.TestCase):
             ]
         }
 
-        ret = self.obj._parse_kambanize_activities(raw_data)
+        ret = self.obj._parse_kanbanize_activities(raw_data)
 
         exp_calls = [
             mock.call(
@@ -280,7 +280,7 @@ class TestFeederClass(unittest.TestCase):
         self.assertEqual(exp_ret, ret)
 
     @mock.patch('dateutil.tz.tzlocal')
-    def test_parse_kambanize_activities_with_formatter(self, fake_local):
+    def test_parse_kanbanize_activities_with_formatter(self, fake_local):
         """
             test parse activities with some formatter function passed
             as argument
@@ -305,7 +305,7 @@ class TestFeederClass(unittest.TestCase):
              u'text': u"From 'J\xe1 detalhados' to 'In Progress.Fazendo'"}
         ]}
 
-        ret = self.obj._parse_kambanize_activities(raw_data, new_formatter)
+        ret = self.obj._parse_kanbanize_activities(raw_data, new_formatter)
 
         exp_ret = [
             {u'taskid': u'133',
@@ -454,7 +454,7 @@ class TestFeederClass(unittest.TestCase):
 
     @mock.patch.object(feeder.Feeder, '_post_slack_message')
     @mock.patch.object(feeder.Feeder, '_format_slack_messages')
-    @mock.patch.object(feeder.Feeder, '_parse_kambanize_activities')
+    @mock.patch.object(feeder.Feeder, '_parse_kanbanize_activities')
     @mock.patch.object(feeder.Feeder, '_get_kanbanize_board_activities')
     def test_run(self, mk_get_kanbanize, mk_parse_kanbanize,
                  mk_format_messages, mk_post_message):
@@ -474,7 +474,7 @@ class TestFeederClass(unittest.TestCase):
             self.obj.kanbanize_opts['kanbanize_message_fomatter'])
         mk_format_messages.assert_called_once_with(mk_ret_parse_kanbanize)
         exp_final_call_args = {
-                             'text': u"Kambanize --> Slack",
+                             'text': u"Kanbanize --> Slack",
                              'icon_emoji': u':alien:',
                              'attachments': json.dumps(mk_ret_format)}
              
