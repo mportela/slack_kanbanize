@@ -112,9 +112,11 @@ class TestFeederClass(unittest.TestCase):
         ret = self.obj._get_kanbanize_board_activities()
 
         exp_from_date = mk_from_date.replace(tzinfo=self.local_zone)
+        exp_from_date = exp_from_date + datetime.timedelta(minutes=60)
         exp_from_date = exp_from_date.astimezone(self.utc_zone).strftime(
                                                         "%Y-%m-%d %H:%M:%S")
         exp_to_date = mk_to_date.replace(tzinfo=self.local_zone)
+        exp_to_date = exp_to_date + datetime.timedelta(minutes=60)
         exp_to_date = exp_to_date.astimezone(self.utc_zone).strftime(
                                                         "%Y-%m-%d %H:%M:%S")
         mk_get_activities.assert_called_once_with(

@@ -55,10 +55,13 @@ class Feeder(object):
             Arguments:
             @from_date - datetime object to be used in get_board_activities
             @to_date - datetime object to be used in get_board_activities
+                       if not passed, to_date will be now + 60 minutes,
+                       because kanbanize api dont works wiell if end date
+                       is not full hour, so we use this work arround
             Return a list with board activities
         """
         if not to_date:
-            to_date = datetime.datetime.now()
+            to_date = datetime.datetime.now() + datetime.timedelta(minutes=60)
         if not from_date:
             from_date = to_date - self.kanbanize_opts['collect_timedelta']
         UTC_ZONE = tz.tzutc()
