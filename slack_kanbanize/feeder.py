@@ -3,6 +3,7 @@
 import datetime
 import copy
 import json
+import os
 
 from dateutil import tz
 from python_kanbanize.wrapper import Kanbanize
@@ -10,7 +11,7 @@ from pyslack import SlackClient
 
 
 class Feeder(object):
-
+    file_name = '.slack-kanbanize-last-msg'
 
     def __init__(self, kanbanize_api_key, kanbanize_board_id, slack_token,
                  slack_channel, slack_user='slackbot',
@@ -45,6 +46,7 @@ class Feeder(object):
         }
         self.slack_client = SlackClient(slack_token)
         self.kanbanize_client = Kanbanize(kanbanize_api_key)
+        self.last_action_file = self._get_last_action_file()
 
     def _get_kanbanize_board_activities(self, from_date=None,
                                         to_date=None):
@@ -128,13 +130,13 @@ class Feeder(object):
 
         return msg
 
-    def _parse_kambanize_activities(self, raw_data,
+    def _parse_kanbanize_activities(self, raw_data,
                 msg_formatter_function=None):
         """
             Used to process activities, grouping by same taskid / date
             Arguments:
             @raw_data - raw_data returned from
-                        kambanize._get_kanbanize_board_activities
+                        kanbanize._get_kanbanize_board_activities
             @msg_formatter_function - function to be used to format each msg
             Return list with objects grouped by taskid / date
             example of return:
@@ -155,8 +157,11 @@ class Feeder(object):
         ret_list = []
         UTC_ZONE = tz.tzutc()
         LOCAL_ZONE = tz.tzlocal()
-        for raw_activity in raw_activities:
 
+        last_date = self._get_last_action_time()
+        new_last_date = last_date
+
+        for raw_activity in raw_activities:
             # converting date comming from utc to local time
             date_in_naive_utc = datetime.datetime.strptime(
                                                   raw_activity[u'date'],
@@ -166,7 +171,17 @@ class Feeder(object):
             date_converted_local = date_in_aware_utc.astimezone(
                                                    LOCAL_ZONE).strftime(
                                                            "%Y-%m-%d %H:%M:%S")
+            
+            if new_last_date:
+                if date_in_naive_utc > new_last_date:
+                    new_last_date = date_in_naive_utc
+            else:
+                new_last_date = date_in_naive_utc
 
+            if last_date:
+                if date_in_naive_utc <= last_date:
+                    continue
+            
             activity = {
                 u'author': raw_activity[u'author'],
                 u'event': raw_activity[u'event'],
@@ -187,15 +202,17 @@ class Feeder(object):
                     }
                 ret_list.append(task)
 
+        self._save_last_action_time(new_last_date)
+
         return ret_list
 
     def _format_slack_messages(self, activities):
         """
             Used to process slack messages returned from
-            '_parse_kambanize_activities' and return formated messages as
+            '_parse_kanbanize_activities' and return formated messages as
             expected by slack api
             Arguments:
-            @activities list of parsed kambanize activities
+            @activities list of parsed kanbanize activities
             Return list with dicts of attachments in slack format
             see tests for example
         """
@@ -236,22 +253,49 @@ class Feeder(object):
 
         return ret_list
 
+    def _get_last_action_file(self):
+        home = os.path.expanduser('~')
+        file_path = os.path.join(home, self.file_name)
+        file = open(file_path, 'a+')
+        file.seek(0)
+        return file
+
+    def _save_last_action_time(self, date):
+        file = self.last_action_file
+
+        file.truncate(0)
+        file.write(date.strftime('%Y-%m-%dT%H:%M:%S.%f'))
+        file.flush()
+
+    def _get_last_action_time(self):
+        file = self.last_action_file
+        date_str = file.readline().strip()
+
+        if not date_str:
+            return None
+
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%f')
+        return date
+
     def run(self):
         """
-            Main method to start this Feeder to collect kambanize activities
-            and post the slack message with all collected data
+        Main method to start this Feeder to collect kanbanize activities
+        and post the slack message with all collected data
         """
         raw_data = self._get_kanbanize_board_activities()
-        activities = self._parse_kambanize_activities(raw_data,
+        activities = self._parse_kanbanize_activities(raw_data,
                             self.kanbanize_opts['kanbanize_message_fomatter'])
         attachments = self._format_slack_messages(activities)
 
         if attachments:
             kwargs = {
-                'text': u"Kambanize --> Slack",
+                'text': u"Kanbanize --> Slack",
                 'icon_emoji': u':alien:',
                 'attachments': json.dumps(attachments)
             }
             self._post_slack_message(**kwargs)
+
+        self.last_action_file.flush()
+        self.last_action_file.close()
 
         return True

@@ -12,6 +12,46 @@ from python_kanbanize.wrapper import Kanbanize
 from pyslack import SlackClient
 
 
+class LastShownMessageTests(unittest.TestCase):
+    @freeze_time("2012-01-14 10:11:12.001002")
+    @mock.patch.object(feeder.Feeder, '_get_last_action_file')
+    def test_save(self, get_file):
+        file = get_file.return_value
+
+        fee = feeder.Feeder("foo_kanbanize_api_key", 4, "foo_slack_token",
+                                 "foo_slack_channel")
+        fee._save_last_action_time(datetime.datetime.now())
+
+        date = '2012-01-14T10:11:12.001002'
+
+        file.truncate.assert_called_with(0)
+        file.write.assert_called_with(date)
+
+    @mock.patch.object(feeder.Feeder, '_get_last_action_file')
+    def test_get_time(self, get_file):
+        file = get_file.return_value
+
+        file.readline.return_value = '2010-10-11T12:13:14.123456'
+
+        fee = feeder.Feeder("foo_kanbanize_api_key", 4, "foo_slack_token",
+                                 "foo_slack_channel")
+        time = fee._get_last_action_time()
+
+        self.assertEquals(time, datetime.datetime(2010, 10, 11, 12, 13, 14, 123456))
+
+    @mock.patch.object(feeder.Feeder, '_get_last_action_file')
+    def test_get_time_file_empty(self, get_file):
+        file = get_file.return_value
+
+        file.readline.return_value = ''
+
+        fee = feeder.Feeder("foo_kanbanize_api_key", 4, "foo_slack_token",
+                                 "foo_slack_channel")
+        time = fee._get_last_action_time()
+
+        self.assertEquals(time, None)
+
+
 class TestFeederClass(unittest.TestCase):
 
     def setUp(self):
@@ -106,23 +146,25 @@ class TestFeederClass(unittest.TestCase):
                                       unfurl_links=1)
         self.assertEqual(True, ret, "must return True when ok")
 
-    def test_parse_kambanize_activities_with_nodata_msg(self):
+    def test_parse_kanbanize_activities_with_nodata_msg(self):
         msg = u'No activities found for the specified board and time range.'\
               u' Make sure all parameters are set correctly.'
-        ret = self.obj._parse_kambanize_activities(msg)
+        ret = self.obj._parse_kanbanize_activities(msg)
         self.assertEqual([], ret)
 
+    @mock.patch.object(feeder.Feeder, '_get_last_action_time')
     @mock.patch('dateutil.tz.tzlocal')
     @mock.patch.object(feeder.Feeder, '_default_message_formatter_function')
-    def test_parse_kambanize_activities_without_formatter(self, mk_formatter,
-                                                          fake_local):
+    def test_parse_kanbanize_activities_without_formatter(self, mk_formatter,
+        fake_local, get_time):
         """
             test parse activities with default formatter
-            simulatte complex possibilities to be grouped and returned:
+            simulate complex possibilities to be grouped and returned:
                 - 2 activities in same task / date
                 - 2 activities in same task / different dates
                 - 1 activity in other task / date
         """
+        get_time.return_value = None
         fake_local.return_value = tz.tzoffset(None, -10800)
         mk_formatter.side_effect = [u'msg fmted 1', u'msg fmted 2',
                                     u'msg fmted 3', u'msg fmted 4',
@@ -156,7 +198,7 @@ class TestFeederClass(unittest.TestCase):
             ]
         }
 
-        ret = self.obj._parse_kambanize_activities(raw_data)
+        ret = self.obj._parse_kanbanize_activities(raw_data)
 
         exp_calls = [
             mock.call(
@@ -239,8 +281,10 @@ class TestFeederClass(unittest.TestCase):
         ]
         self.assertEqual(exp_ret, ret)
 
+    @mock.patch.object(feeder.Feeder, '_get_last_action_time')
     @mock.patch('dateutil.tz.tzlocal')
-    def test_parse_kambanize_activities_with_formatter(self, fake_local):
+    def test_parse_kanbanize_activities_with_formatter(self, fake_local,
+        get_time):
         """
             test parse activities with some formatter function passed
             as argument
@@ -248,6 +292,8 @@ class TestFeederClass(unittest.TestCase):
                 - 2 activities in same task / date
         """
         fake_local.return_value = tz.tzoffset(None, -10800)
+        get_time.return_value = None
+
         # simulated formatter function to be used
         def new_formatter(data):
             return u'foo formated data'
@@ -265,7 +311,7 @@ class TestFeederClass(unittest.TestCase):
              u'text': u"From 'J\xe1 detalhados' to 'In Progress.Fazendo'"}
         ]}
 
-        ret = self.obj._parse_kambanize_activities(raw_data, new_formatter)
+        ret = self.obj._parse_kanbanize_activities(raw_data, new_formatter)
 
         exp_ret = [
             {u'taskid': u'133',
@@ -414,7 +460,7 @@ class TestFeederClass(unittest.TestCase):
 
     @mock.patch.object(feeder.Feeder, '_post_slack_message')
     @mock.patch.object(feeder.Feeder, '_format_slack_messages')
-    @mock.patch.object(feeder.Feeder, '_parse_kambanize_activities')
+    @mock.patch.object(feeder.Feeder, '_parse_kanbanize_activities')
     @mock.patch.object(feeder.Feeder, '_get_kanbanize_board_activities')
     def test_run(self, mk_get_kanbanize, mk_parse_kanbanize,
                  mk_format_messages, mk_post_message):
@@ -434,11 +480,113 @@ class TestFeederClass(unittest.TestCase):
             self.obj.kanbanize_opts['kanbanize_message_fomatter'])
         mk_format_messages.assert_called_once_with(mk_ret_parse_kanbanize)
         exp_final_call_args = {
-                             'text': u"Kambanize --> Slack",
+                             'text': u"Kanbanize --> Slack",
                              'icon_emoji': u':alien:',
                              'attachments': json.dumps(mk_ret_format)}
              
         mk_post_message.assert_called_with(**exp_final_call_args)
+
+    @mock.patch.object(feeder.Feeder, '_save_last_action_time')
+    @mock.patch.object(feeder.Feeder, '_get_last_action_time')
+    @mock.patch('dateutil.tz.tzlocal')
+    @mock.patch.object(feeder.Feeder, '_default_message_formatter_function')
+    def test_parse_kanbanize_activities_filter_by_last_time(self, mk_formatter,
+        fake_local, get_last_time, save_last_time):
+        fake_local.return_value = tz.tzoffset(None, -10800)
+        mk_formatter.side_effect = [u'msg fmted 1', u'msg fmted 2',
+                                    u'msg fmted 3']
+        
+        last_time = datetime.datetime(2010, 10, 10, 13, 30, 00)
+        get_last_time.return_value = last_time
+
+        raw_data = {u'activities': [
+            {u'author': u'marcel.portela',
+             u'date': u'2010-10-10 13:40:00', # show
+             u'event': u'Assignee changed',
+             u'taskid': u'133',
+             u'text': u'New assignee: marcel.portela'},
+            {u'author': u'marcel.portela',
+             u'date': u'2010-10-10 13:38:00', # show
+             u'event': u'Task moved',
+             u'taskid': u'133',
+             u'text': u"From 'J\xe1 detalhados' to 'In Progress.Fazendo'"},
+            {u'author': u'pappacena',
+             u'date': u'2010-10-10 13:32:00', # show
+             u'event': u'Task moved',
+             u'taskid': u'119',
+             u'text': u"From 'J\xe1 detalhados' to 'Backlog'"},
+            {u'author': u'pappacena',
+             u'date': u'2010-10-10 13:28:00', # don't show
+             u'event': u'Task moved',
+             u'taskid': u'119',
+             u'text': u"From 'Backlog' to 'J\xe1 detalhados'"},
+            {u'author': u'pappacena',
+             u'date': u'2010-10-10 13:25:00', # don't show
+             u'event': u'Assignee changed',
+             u'taskid': u'121',
+             u'text': u'New assignee: marcel.portela'}
+            ]
+        }
+
+        ret = self.obj._parse_kanbanize_activities(raw_data)
+
+        exp_calls = [
+            mock.call(
+                {u'author': u'marcel.portela',
+                 u'event': u'Assignee changed',
+                 u'text': u'New assignee: marcel.portela',
+                 u'formatted_message': u'msg fmted 1'}
+            ),
+            mock.call(
+                {u'author': u'marcel.portela',
+                 u'event': u'Task moved',
+                 u'text': u"From 'J\xe1 detalhados' to 'In"
+                          u" Progress.Fazendo'",
+                 u'formatted_message': u'msg fmted 2'}
+            ),
+            mock.call(
+                {u'author': u'pappacena',
+                 u'event': u'Task moved',
+                 u'text': u"From 'J\xe1 detalhados' to 'Backlog'",
+                 u'formatted_message': u'msg fmted 3'}
+            )
+        ]
+        self.assertEqual(exp_calls, mk_formatter.call_args_list)
+
+        exp_ret = [
+            {u'taskid': u'133',
+             u'activities': {
+                    u'2010-10-10 10:40:00': [
+                        {u'author': u'marcel.portela',
+                         u'event': u'Assignee changed',
+                         u'text': u'New assignee: marcel.portela',
+                         u'formatted_message': u'msg fmted 1'},
+                    ],
+                    u'2010-10-10 10:38:00': [
+                        {u'author': u'marcel.portela',
+                         u'event': u'Task moved',
+                         u'text': u"From 'J\xe1 detalhados' to"
+                                  u" 'In Progress.Fazendo'",
+                         u'formatted_message': u'msg fmted 2'},
+                    ]
+                }
+            },
+            {u'taskid': u'119',
+             u'activities': {
+                    u'2010-10-10 10:32:00': [
+                        {u'author': u'pappacena',
+                         u'event': u'Task moved',
+                         u'text': u"From 'J\xe1 detalhados' to 'Backlog'",
+                         u'formatted_message': u'msg fmted 3'}
+                    ]
+                }
+            }
+        ]
+        self.assertEqual(exp_ret, ret)
+
+        save_last_time.assert_called_with(
+            datetime.datetime(2010, 10, 10, 13, 40, 00)
+        )
 
 if __name__ == '__main__':
     unittest.main()
