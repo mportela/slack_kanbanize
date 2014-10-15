@@ -35,7 +35,7 @@ setup(
     description=description,
     long_description=long_description,
     classifiers=classifiers,
-    dependency_links = ['https://github.com/mportela/python-kanbanize/tarball/master#egg=python-kanbanize-0.2.1',
+    dependency_links = ['https://github.com/mportela/python-kanbanize/tarball/master#egg=python-kanbanize-0.2.2',
                         'https://github.com/mportela/pyslack/tarball/master#egg=pyslack-0.3.0'],
     install_requires = reqs,
     package_dir={'': 'slack_kanbanize'},
