@@ -334,6 +334,51 @@ class TestFeederClass(unittest.TestCase):
         ]
         self.assertEqual(exp_ret, ret)
 
+    @mock.patch.object(feeder.Feeder, '_get_last_action_time')
+    @mock.patch('dateutil.tz.tzlocal')
+    def test_parse_kanbanize_activities_with_formatter_empty_msg(self, fake_local,
+        get_time):
+        """
+        Empty messages returned from the custom formatter should be ignored.
+        """
+        fake_local.return_value = tz.tzoffset(None, -10800)
+        get_time.return_value = None
+
+        new_formatter = mock.Mock()
+        new_formatter.side_effect = [
+            u'foo formated data',
+            u''
+        ]
+
+        raw_data = {u'activities': [
+            {u'author': u'marcel.portela',
+             u'date': u'2014-10-02 20:21:06',
+             u'event': u'Assignee changed',
+             u'taskid': u'133',
+             u'text': u'New assignee: marcel.portela'},
+            {u'author': u'marcel.portela',
+             u'date': u'2014-10-02 20:21:06',
+             u'event': u'Task moved',
+             u'taskid': u'133',
+             u'text': u"From 'J\xe1 detalhados' to 'In Progress.Fazendo'"}
+        ]}
+
+        ret = self.obj._parse_kanbanize_activities(raw_data, new_formatter)
+
+        exp_ret = [
+            {u'taskid': u'133',
+             u'activities': {
+                    u'2014-10-02 17:21:06': [
+                        {u'author': u'marcel.portela',
+                         u'event': u'Assignee changed',
+                         u'text': u"New assignee: marcel.portela",
+                         u'formatted_message': u'foo formated data'},
+                    ]
+                }
+            }
+        ]
+        self.assertEqual(exp_ret, ret)
+
     def test_default_message_formatter_function_with_know_event(self):
         activity = {u'author': u'marcel.portela',
                     u'event': u'Assignee changed',
@@ -401,19 +446,13 @@ class TestFeederClass(unittest.TestCase):
                        u'mrkdwn_in': [u'fields'],
                        u'fields': [
                             {
-                            u'title': u'Message',
+                            u'title': u'Task',
+                            u'value': u'<https://kanbanize.com/ctrl_board/4/'
+                                      u'133|133>',
+                            u'short': True
+                            },
+                            {
                             u'value': u'foo formated data1\nfoo formated data2'
-                            },
-                            {
-                            u'title': u'Task',
-                            u'value': u'<https://kanbanize.com/ctrl_board/4/'
-                                      u'133|133>',
-                            u'short': True
-                            },
-                            {
-                            u'title': u'Date',
-                            u'value': u'2014-10-02 20:21:06',
-                            u'short': True
                             }
                          ]
                       },
@@ -421,29 +460,19 @@ class TestFeederClass(unittest.TestCase):
                        u'mrkdwn_in': [u'fields'],
                        u'fields': [
                             {
-                            u'title': u'Message',
+                            u'title': u'Task',
+                            u'value': u'<https://kanbanize.com/ctrl_board/4/'
+                                      u'133|133>',
+                            u'short': True
+                            },
+                            {
                             u'value': u'foo formated data3'
-                            },
-                            {
-                            u'title': u'Task',
-                            u'value': u'<https://kanbanize.com/ctrl_board/4/'
-                                      u'133|133>',
-                            u'short': True
-                            },
-                            {
-                            u'title': u'Date',
-                            u'value': u'2014-10-02 20:31:06',
-                            u'short': True
                             }
                          ]
                       },
                       {u'color': u'good',
                        u'mrkdwn_in': [u'fields'],
                        u'fields': [
-                            {
-                            u'title': u'Message',
-                            u'value': u'foo formated data4'
-                            },
                             {
                             u'title': u'Task',
                             u'value': u'<https://kanbanize.com/ctrl_board/4/'
@@ -451,9 +480,7 @@ class TestFeederClass(unittest.TestCase):
                             u'short': True
                             },
                             {
-                            u'title': u'Date',
-                            u'value': u'2014-10-02 20:22:06',
-                            u'short': True
+                            u'value': u'foo formated data4'
                             }
                          ]
                       }
@@ -482,7 +509,7 @@ class TestFeederClass(unittest.TestCase):
             self.obj.kanbanize_opts['kanbanize_message_fomatter'])
         mk_format_messages.assert_called_once_with(mk_ret_parse_kanbanize)
         exp_final_call_args = {
-                             'text': u"Kanbanize --> Slack",
+                             'text': None,
                              'icon_emoji': u':alien:',
                              'attachments': json.dumps(mk_ret_format)}
              

@@ -191,6 +191,10 @@ class Feeder(object):
                 u'text': raw_activity[u'text'],
                 u'formatted_message': u''}
             activity[u'formatted_message'] = msg_formatter_function(activity)
+
+            if not activity[u'formatted_message']:
+                continue
+
             for item in ret_list:
                 # if in result yet, update the date / activities
                 if item[u'taskid'] == raw_activity[u'taskid']:
@@ -225,18 +229,12 @@ class Feeder(object):
                 u'mrkdwn_in': [u'fields'],
                 u'fields': [
                         {
-                            u'title': u'Message',
-                            u'value': u''
-                        },
-                        {
                             u'title': u'Task',
                             u'value': u'',
                             u'short': True
                         },
                         {
-                            u'title': u'Date',
-                            u'value': u'',
-                            u'short': True
+                            u'value': u''
                         }
                 ]
         }
@@ -244,14 +242,15 @@ class Feeder(object):
         for activity in activities:
             for date in activity['activities']:
                 attach = copy.deepcopy(attachment_template)
-                attach[u'fields'][1][u'value'] =\
+
+                attach[u'fields'][0][u'value'] =\
                     '<https://kanbanize.com/ctrl_board/%s/%s|%s>' %\
                             (self.kanbanize_opts['board_id'],
                              activity['taskid'], activity['taskid'])
-                attach[u'fields'][2][u'value'] = date
+
                 msgs = [item['formatted_message'] for item in activity[
                                                         'activities'][date]]
-                attach[u'fields'][0][u'value'] = u'\n'.join(msgs)
+                attach[u'fields'][1][u'value'] = u'\n'.join(msgs)
                 ret_list.append(attach)
 
         return ret_list
@@ -292,7 +291,7 @@ class Feeder(object):
 
         if attachments:
             kwargs = {
-                'text': u"Kanbanize --> Slack",
+                'text': None,
                 'icon_emoji': u':alien:',
                 'attachments': json.dumps(attachments)
             }
